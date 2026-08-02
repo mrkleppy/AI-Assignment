@@ -1,5 +1,5 @@
 from Maze_generator import generate_maze
-from HillClimbing import hillClimbing, Maze, State
+from SAHC.HillClimbing import hillClimbing, Maze, State
 
 rows, columns = 14, 14
 

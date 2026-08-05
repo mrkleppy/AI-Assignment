@@ -261,10 +261,15 @@ def successors(current_state, maze):
 
 # Bidrectional Breadth-First Search
 class BidirectionalBFS:
-    def bidirectional_bfs(self, maze, start_row, start_column):
+    def __init__(self, maze, start_row, start_column, meeting_state=None, parent_from_start=None, parent_from_goal=None):
+        self.maze = maze
+        self.start_row = start_row
+        self.start_column = start_column
+        
+    def bidirectional_bfs(self):
         # Initialise the start and goal point
-        initial_state = State(start_row, start_column)
-        goal_state = State(maze.end_row, maze.end_column)
+        initial_state = State(self.start_row, self.start_column)
+        goal_state = State(self.maze.end_row, self.maze.end_column)
 
         # queue for BFS from start and goal
         # deque is for efficient pop from left and append to right, for both the exit and start
@@ -296,7 +301,7 @@ class BidirectionalBFS:
 
             frontier_updates = []
 
-            for child_state in successors(current_state_from_initial, maze):
+            for child_state in successors(current_state_from_initial, self.maze):
                 if child_state not in visited_from_start:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from start
                     visited_from_start.add(child_state)
@@ -324,7 +329,7 @@ class BidirectionalBFS:
 
             frontier_updates = []
 
-            for child_state in successors(current_state_from_goal, maze):
+            for child_state in successors(current_state_from_goal, self.maze):
                 if child_state not in visited_from_goal:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from goal
                     visited_from_goal.add(child_state)
@@ -338,7 +343,7 @@ class BidirectionalBFS:
                         meeting_state = (child_state.current_row, child_state.current_column)
                         print(f"{step_number:<6} {'Goal':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
                         path = self.construct_path(child_state, parent_from_initial, parent_from_goal)
-                        print("Bidirectional-Breadth First Search Path:", path)
+                        print("\nBidirectional-Breadth First Search Path:", path)
                         return path
 
             print(f"{step_number:<6} {'Goal':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
@@ -556,8 +561,8 @@ def main():
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 3:
-                bbfs_solver = BidirectionalBFS()
-                path = bbfs_solver.bidirectional_bfs(maze, start_row, start_column)
+                bbfs_solver = BidirectionalBFS(maze, start_row, start_column, end_row, end_column)
+                path = bbfs_solver.bidirectional_bfs()
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 4:

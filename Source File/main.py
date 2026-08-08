@@ -1,4 +1,3 @@
-import tracemalloc
 from collections import deque
 
 GREEN = "\033[92m"

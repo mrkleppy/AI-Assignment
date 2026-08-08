@@ -1,6 +1,9 @@
+import tracemalloc
 from collections import deque
 
 GREEN = "\033[92m"
+BLUE = "\033[0;34m"
+RED = "\033[31m"
 RESET = "\033[0m"
 
 # Test datas
@@ -202,10 +205,10 @@ test_cases = [
             [1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
             [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
             [1, 0, 1, 1, 1, 1, 1, 0, 1, 1],
-            [1, 1, 0, 0, 0, 0, 1, 1, 0, 1],
-            [0, 1, 1, 1, 1, 0, 0, 1, 0, 1],
-            [1, 1, 0, 1, 0, 1, 1, 1, 1, 0],
-            [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+            [1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
+            [0, 1, 0, 1, 1, 1, 0, 0, 1, 1],
+            [1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
         ],
         "note": "Top Left Start, Bottom Right End, control test data, intended to be impossible to solve"
     },
@@ -261,99 +264,205 @@ def successors(current_state, maze):
 
 # Bidrectional Breadth-First Search
 class BidirectionalBFS:
-    def bidirectional_bfs(self, maze, start_row, start_column):
-        # Initialise the start and goal point
-        initial_state = State(start_row, start_column)
-        goal_state = State(maze.end_row, maze.end_column)
+    def __init__(self, maze, start_row, start_column):
+        self.maze = maze
+        self.start_row = start_row
+        self.start_column = start_column
 
+    def bidirectional_bfs(self):
+        # Initialise the start and goal point
+        initial_state = State(self.start_row, self.start_column)
+        goal_state = State(self.maze.end_row, self.maze.end_column)
+    
         # queue for BFS from start and goal
         # deque is for efficient pop from left and append to right, for both the exit and start
         queue_from_initial = deque([initial_state])
         queue_from_goal = deque([goal_state])
-
+    
         # visited sets for BFS from start and goal
         visited_from_start = {initial_state}
         visited_from_goal = {goal_state}
-
+    
         # parent dictionaries for BFS from start and goal to reconstruct the path
         parent_from_initial = {initial_state: None}
         parent_from_goal = {goal_state: None}
-
+    
         step_number = 0  # Step counter for showing the number of steps taken in the search
-
-        print("\nBidirectional Breadth-First Search\n")
-        print(f"{'Step':<6} {'Direction':<10} {'Expanded Node':<18} {'Frontier':<30} {'Meeting State':<18}")
-
+        number_of_expanded_nodes = 0  # Time complexity in practice: total number of expanded nodes
+        maximum_frontier_size = len(queue_from_initial) + len(queue_from_goal)  # Space complexity in practice: max total frontier size stored at one time
+        final_meeting_state = None # The meeting point where the two searches meet
+        meeting_state_object = None # The meeting point object where the two searches meet, used to reconstruct the path
+    
+        print("\nBidirectional Breadth-First Search")
+        print("=" * 70)
+    
+        # The start and goal searches will continue until either one of the queues is empty or a meeting point is found
         while queue_from_initial and queue_from_goal:
+            step_number += 1 # Increment the step counter for each iteration of the search
+    
             # Since this is a bidirectional BFS, we will alternate between expanding the search from the start and the goal.
+    
+            # --------------------------------------------------- BFS from start ---------------------------------------------------
+            current_state_from_initial = queue_from_initial.popleft() # LIFO: pop from left, FIFO: append to right
+            number_of_expanded_nodes += 1 # Increment the number of expanded nodes for time complexity
+    
+            # Store coordinates for printing
+            expanded_node = (
+                current_state_from_initial.current_row,
+                current_state_from_initial.current_column
+            )
+            all_possible_moves = []
+            added_to_frontier = []
+    
+            # Generate successors for the current state from the initial search and process them
+            for child_state in successors(current_state_from_initial, self.maze):
+                child_position = (
+                    child_state.current_row,
+                    child_state.current_column
+                )
 
-            # BFS from start
-            current_state_from_initial = queue_from_initial.popleft()
-            step_number += 1
-
-            expanded_node = (current_state_from_initial.current_row, current_state_from_initial.current_column)
-            meeting_state = "-"
-
-            frontier_updates = []
-
-            for child_state in successors(current_state_from_initial, maze):
+                all_possible_moves.append(child_position)
+    
                 if child_state not in visited_from_start:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from start
                     visited_from_start.add(child_state)
                     parent_from_initial[child_state] = current_state_from_initial
                     queue_from_initial.append(child_state)
+    
+                    # Store the added child position for printing
+                    added_to_frontier.append(child_position)
 
-                    frontier_updates.append((child_state.current_row, child_state.current_column))
-
+                    # Calculate the current total frontier size by summing the lengths of both queues (For time complexity)
+                    current_total_frontier_size = len(queue_from_initial) + len(queue_from_goal)
+    
+                    # Update the maximum frontier size if the current total frontier size exceeds it
+                    if current_total_frontier_size > maximum_frontier_size:
+                        maximum_frontier_size = current_total_frontier_size
+    
                     if child_state in visited_from_goal:
                         # If the child is found in the goal's visited set, we reconstruct the path from start to goal
-                        meeting_state = (child_state.current_row, child_state.current_column)
-                        print(f"{step_number:<6} {'Start':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
-                        path = self.construct_path(child_state, parent_from_initial, parent_from_goal)
-                        print("\nBidirectional-Breadth First Search Path:", path)
-                        return path
-
-            print(f"{step_number:<6} {'Start':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
-
-            # BFS from goal
+                        final_meeting_state = child_position
+                        meeting_state_object = child_state
+                        break
+    
+            # Store the current coordinates of the frontiers for printing
+            start_frontier_coordinates = [
+                (state.current_row, state.current_column)
+                for state in queue_from_initial
+            ]
+            goal_frontier_coordinates = [
+                (state.current_row, state.current_column)
+                for state in queue_from_goal
+            ]
+    
+            print(f"\n+---------------------- Step {step_number}: {GREEN}Start Search{RESET} ---------------------+")
+            print(f"| Expanded Node       : {expanded_node}")
+            print(f"| All Possible Moves  : {all_possible_moves}")
+            print(f"| Added to Frontier   : {added_to_frontier}")
+            print(f"| {RED}Start Frontier{RESET}      : {start_frontier_coordinates}")
+            print(f"| Goal Frontier       : {goal_frontier_coordinates}")
+            print(f"| Total Frontier Size : {len(queue_from_initial) + len(queue_from_goal)}")
+            print("+------------------------------------------------------------------+")
+    
+            if final_meeting_state is not None:
+                break
+    
+            # --------------------------------------------------- BFS from goal ---------------------------------------------------
             current_state_from_goal = queue_from_goal.popleft()
-            step_number += 1
-
-            expanded_node = (current_state_from_goal.current_row, current_state_from_goal.current_column)
-            meeting_state = "-"
-
-            frontier_updates = []
-
-            for child_state in successors(current_state_from_goal, maze):
+            number_of_expanded_nodes += 1
+    
+            expanded_node = (
+                current_state_from_goal.current_row,
+                current_state_from_goal.current_column
+            )
+    
+            all_possible_moves = []
+            added_to_frontier = []
+    
+            for child_state in successors(current_state_from_goal, self.maze):
+                child_position = (
+                    child_state.current_row,
+                    child_state.current_column
+                )
+    
+                all_possible_moves.append(child_position)
+    
                 if child_state not in visited_from_goal:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from goal
                     visited_from_goal.add(child_state)
                     parent_from_goal[child_state] = current_state_from_goal
                     queue_from_goal.append(child_state)
-
-                    frontier_updates.append((child_state.current_row, child_state.current_column))
-
+    
+                    added_to_frontier.append(child_position)
+    
+                    current_total_frontier_size = len(queue_from_initial) + len(queue_from_goal)
+    
+                    if current_total_frontier_size > maximum_frontier_size:
+                        maximum_frontier_size = current_total_frontier_size
+    
                     if child_state in visited_from_start:
                         # If the child is found in the start's visited set, we reconstruct the path from start to goal
-                        meeting_state = (child_state.current_row, child_state.current_column)
-                        print(f"{step_number:<6} {'Goal':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
-                        path = self.construct_path(child_state, parent_from_initial, parent_from_goal)
-                        print("Bidirectional-Breadth First Search Path:", path)
-                        return path
-
-            print(f"{step_number:<6} {'Goal':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
-
-        print("\nNo path found.")
+                        final_meeting_state = child_position
+                        meeting_state_object = child_state
+                        break
+    
+            start_frontier_coordinates = [
+                (state.current_row, state.current_column)
+                for state in queue_from_initial
+            ]
+            goal_frontier_coordinates = [
+                (state.current_row, state.current_column)
+                for state in queue_from_goal
+            ]
+    
+            print(f"\n+---------------------- Step {step_number}: {BLUE}Goal Search{RESET} ----------------------+")
+            print(f"| Expanded Node       : {expanded_node}")
+            print(f"| All Possible Moves  : {all_possible_moves}")
+            print(f"| Added to Frontier   : {added_to_frontier}")
+            print(f"| Start Frontier      : {start_frontier_coordinates}")
+            print(f"| {RED}Goal Frontier{RESET}       : {goal_frontier_coordinates}")
+            print(f"| Total Frontier Size : {len(queue_from_initial) + len(queue_from_goal)}")
+            print("+------------------------------------------------------------------+")
+    
+            # If a meeting point is found, we break out of the loop to reconstruct the path
+            if final_meeting_state is not None:
+                break
+    
+        print("\n" + "=" * 70)
+        print("Bidirectional Breadth-First Search Results")
+        print()
+    
+        # If a meeting point is found, we reconstruct the path from start to goal through the meeting point
+        if final_meeting_state is not None:
+            path = self.construct_path(
+                meeting_state_object,
+                parent_from_initial,
+                parent_from_goal
+            )
+    
+            print("Meeting Point:", final_meeting_state)
+            print("Bidirectional Breadth-First Search Path:", path)
+            print("Time Complexity (Nodes Expanded):", number_of_expanded_nodes)
+            print("Space Complexity (Maximum Frontier Size):", maximum_frontier_size)
+    
+            return path
+    
+        # If no meeting point is found, we print that no path was found and return None
+        print("No path found.")
+        print("Meeting Point: None")
+        print("Time Complexity (Nodes Expanded):", number_of_expanded_nodes)
+        print("Space Complexity (Maximum Frontier Size):", maximum_frontier_size)
+    
         return None  # If no path is found, return none
 
-    def construct_path(self, meeting_state, parent_from_start, parent_from_goal):
+    def construct_path(self, meeting_state, parent_from_initial, parent_from_goal):
         # Reconstruct the path from start to goal through the meeting point
         # First, reconstruct the path from start to meeting point
         path_from_start = []
         current_node = meeting_state
         while current_node is not None:
             path_from_start.append((current_node.current_row, current_node.current_column))
-            current_node = parent_from_start.get(current_node)
+            current_node = parent_from_initial.get(current_node)
         path_from_start.reverse()  # Reverses the path from start to meeting point to get the correct order from start to meeting point
 
         # Secondly, reconstruct the path from meeting point to goal
@@ -556,8 +665,8 @@ def main():
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 3:
-                bbfs_solver = BidirectionalBFS()
-                path = bbfs_solver.bidirectional_bfs(maze, start_row, start_column)
+                bidirectional_bfs_solver = BidirectionalBFS(maze, start_row, start_column)
+                path = bidirectional_bfs_solver.bidirectional_bfs()
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 4:

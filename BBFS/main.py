@@ -259,6 +259,117 @@ def successors(current_state, maze):
 
     return children
 
+class BFS:
+    @staticmethod
+    def bfs_maze_with_levels(maze, start_row, start_column):
+        start = State(start_row, start_column)
+        goal = State(maze.end_row, maze.end_column)
+
+        # Validate start and goal positions
+        if not start.is_valid(maze) or not goal.is_valid(maze):
+            print("Start or goal is invalid (wall or out of bounds).")
+            return None
+
+        from collections import deque
+
+        # BFS queue stores (state, level_depth)
+        queue = deque([(start, 0)])
+        visited = {start}
+        level_nodes = {}  # level -> list of (row, col) tuples
+
+        while queue:
+            current, level = queue.popleft()
+
+            # Record current node at its level
+            if level not in level_nodes:
+                level_nodes[level] = []
+            level_nodes[level].append((current.current_row, current.current_column))
+
+            # Check if we reached the goal
+            if current == goal:
+                # Print level-by-level exploration
+                print("\n" + "="*50)
+                print("BFS LEVEL-BY-LEVEL EXPLORATION")
+                print("="*50)
+                for lvl in sorted(level_nodes.keys()):
+                    nodes = level_nodes[lvl]
+                    print(f"Level {lvl}: {nodes}")
+                print("="*50)
+
+                # Reconstruct the complete path from start to goal
+                path = []
+                node = current
+                while node is not None:
+                    path.append((node.current_row, node.current_column))
+                    node = node.parent
+                path.reverse()
+
+                print(f"Path found! Length: {len(path)}")
+                print(f"Path: {path}")
+                return path
+
+            # Explore neighbours
+            for child in successors(current, maze):
+                if child not in visited:
+                    visited.add(child)
+                    # Set parent pointer for path reconstruction
+                    child.parent = current
+                    queue.append((child, level + 1))
+
+        # No path found
+        print("\n" + "="*50)
+        print("BFS LEVEL-BY-LEVEL EXPLORATION")
+        print("="*50)
+        for lvl in sorted(level_nodes.keys()):
+            nodes = level_nodes[lvl]
+            print(f"Level {lvl}: {nodes}")
+        print("="*50)
+        print("No path found from start to goal.")
+        return None
+
+    @staticmethod
+    def bfs_maze(maze, start_row, start_column):
+        """
+        Standard (unidirectional) BFS to find the shortest path in the maze.
+        (No level printing, just returns the path.)
+
+        Args:
+            maze: Maze object with attributes mazeMap, end_row, end_column.
+            start_row, start_column: starting coordinates.
+
+        Returns:
+            List of (row, col) tuples from start to goal, or None if no path exists.
+        """
+        start = State(start_row, start_column)
+        goal = State(maze.end_row, maze.end_column)
+
+        if not start.is_valid(maze) or not goal.is_valid(maze):
+            return None
+
+        from collections import deque
+
+        queue = deque([start])
+        visited = {start}
+
+        while queue:
+            current = queue.popleft()
+
+            if current == goal:
+                path = []
+                node = current
+                while node is not None:
+                    path.append((node.current_row, node.current_column))
+                    node = node.parent
+                path.reverse()
+                return path
+
+            for child in successors(current, maze):
+                if child not in visited:
+                    visited.add(child)
+                    queue.append(child)
+
+        return None
+
 # Bidrectional Breadth-First Search
 class BidirectionalBFS:
     @staticmethod
@@ -490,7 +601,7 @@ def main():
             print_maze(maze_map)
             
             if algorithmChoice == 1:
-                path = bfs(maze, start_row, start_column) # WIP
+                path = BFS.bfs_maze_with_levels(maze, start_row, start_column) # WIP
                 print("\nBreadth-First Search Path:", path)
                 input("\nPress Enter to return to the main menu...")
 

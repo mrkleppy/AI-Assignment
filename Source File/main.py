@@ -1,3 +1,4 @@
+import tracemalloc
 from collections import deque
 
 GREEN = "\033[92m"
@@ -354,7 +355,7 @@ class BidirectionalBFS:
                 for state in queue_from_goal
             ]
     
-            print(f"\n+---------------------- Step {step_number}: {GREEN}Start Search{RESET} ---------------------+")
+            print(f"\n+----------------- Step {step_number}: From the {GREEN}Start Search{RESET} ------------------+")
             print(f"| Expanded Node       : {expanded_node}")
             print(f"| All Possible Moves  : {all_possible_moves}")
             print(f"| Added to Frontier   : {added_to_frontier}")
@@ -414,7 +415,7 @@ class BidirectionalBFS:
                 for state in queue_from_goal
             ]
     
-            print(f"\n+---------------------- Step {step_number}: {BLUE}Goal Search{RESET} ----------------------+")
+            print(f"\n+----------------- Step {step_number}: From the {BLUE}Goal Search{RESET} ------------------+")
             print(f"| Expanded Node       : {expanded_node}")
             print(f"| All Possible Moves  : {all_possible_moves}")
             print(f"| Added to Frontier   : {added_to_frontier}")
@@ -605,6 +606,25 @@ def print_maze(maze_map):
             else:
                 colored_row.append(str(cell))
         print(" ".join(colored_row))
+      
+# The maze path with solutions in them  
+def print_maze_with_path(maze_map, path):
+    print("\nMaze with Path Highlighted:")
+    path_coordinates = set(path)
+
+    for row_index, row in enumerate(maze_map):
+        colored_row = []
+        for column_index, cell in enumerate(row):
+            current_position = (row_index, column_index)
+
+            if current_position in path_coordinates:
+                colored_row.append(f"{RED}{cell}{RESET}")
+            elif cell == 1:
+                colored_row.append(f"{GREEN}{cell}{RESET}")
+            else:
+                colored_row.append(str(cell))
+
+        print(" ".join(colored_row))
         
 def main():
     while True:
@@ -666,6 +686,12 @@ def main():
             elif algorithmChoice == 3:
                 bidirectional_bfs_solver = BidirectionalBFS(maze, start_row, start_column)
                 path = bidirectional_bfs_solver.bidirectional_bfs()
+                
+                if path is not None:
+                    print_maze_with_path(maze_map, path)
+                else:
+                    print("\nBidirectional Breadth-First Search Path: No solution")
+                
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 4:

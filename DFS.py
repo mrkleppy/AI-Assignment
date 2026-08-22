@@ -37,9 +37,6 @@ class DepthFirstSearch():
         
     def trace(self, start, maze, current, frontier, visited, children, completed):
         print(f"============= Step {self.numOfIteration} =============")
-        print(f"Initial State: ({start.current_row}, {start.current_column})")
-        print(f"Goal State   : ({maze.end_row}, {maze.end_column})")
-        if completed: print(" -  Reached")
         print(f"Current State: ({current.current_row}, {current.current_column})")
         print(f"Successors   : ", end = "")
         print(", ".join(f"({node.current_row}, {node.current_column})" for node in children), end="")

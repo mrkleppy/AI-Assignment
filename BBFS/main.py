@@ -261,7 +261,7 @@ def successors(current_state, maze):
 
 class BFS:
     @staticmethod
-    def bfs_maze_with_levels(maze, start_row, start_column):
+    def bfs(maze, start_row, start_column):
         start = State(start_row, start_column)
         goal = State(maze.end_row, maze.end_column)
 
@@ -329,17 +329,6 @@ class BFS:
 
     @staticmethod
     def bfs_maze(maze, start_row, start_column):
-        """
-        Standard (unidirectional) BFS to find the shortest path in the maze.
-        (No level printing, just returns the path.)
-
-        Args:
-            maze: Maze object with attributes mazeMap, end_row, end_column.
-            start_row, start_column: starting coordinates.
-
-        Returns:
-            List of (row, col) tuples from start to goal, or None if no path exists.
-        """
         start = State(start_row, start_column)
         goal = State(maze.end_row, maze.end_column)
 
@@ -601,7 +590,7 @@ def main():
             print_maze(maze_map)
             
             if algorithmChoice == 1:
-                path = BFS.bfs_maze_with_levels(maze, start_row, start_column) # WIP
+                path = BFS.bfs(maze, start_row, start_column) # WIP
                 print("\nBreadth-First Search Path:", path)
                 input("\nPress Enter to return to the main menu...")
 

@@ -7,79 +7,95 @@ CYAN = "\033[0;36m"
 RED = "\033[31m"
 RESET = "\033[0m"
 
-def heuristic(state, maze):
-    # Manhattan distance: admissible and consistent on a 4-directional unit-cost grid
-    return abs(state.current_row - maze.end_row) + abs(state.current_column - maze.end_column)
+class AStar:
+    # Initialise for the A* search
+    def __init__(self, maze, start_row, start_column):
+        # Store the maze and work out the start and goal states
+        self.maze = maze
+        self.start = State(start_row, start_column)
+        self.goal = State(maze.end_row, maze.end_column)
 
-def a_star(maze, start_row, start_column):
-    start = State(start_row, start_column)
-    goal = State(maze.end_row, maze.end_column)
+        # counter is used to break ties in the heap so two states are never compared directly
+        self.counter = count()
+        # g_score keeps the best known cost from start to each state found so far
+        self.g_score = {self.start: 0}
+        # open_heap is the priority frontier, ordered by f = g + h
+        self.open_heap = [(self.heuristic(self.start), next(self.counter), self.start)]
+        # closed holds every state that has already been expanded
+        self.closed = set()
 
-    if not start.is_valid(maze) or not goal.is_valid(maze):
-        print("Start or goal is invalid (wall or out of bounds).")
+        # stats used later to print the result summary
+        self.step = 0
+        self.max_frontier = 1
+        self.completed = False
+
+    # Calculate the heuristic value by performing manhattan distance
+    def heuristic(self, state):
+        return abs(state.current_row - self.maze.end_row) + abs(state.current_column - self.maze.end_column)
+
+    # A* search algorithm
+    def a_star(self):
+        # If the start or goal is a wall or out of bounds then end
+        if not self.start.is_valid(self.maze) or not self.goal.is_valid(self.maze):
+            print("Start or goal is invalid (wall or out of bounds).")
+            return None
+
+        # Keep expanding the frontier until it is empty or the goal is found
+        while self.open_heap:
+            # Take the state with the lowest f score from the frontier
+            f, _, current = heapq.heappop(self.open_heap)
+
+            # Skip this entry if it was already expanded through a better path
+            if current in self.closed:
+                continue
+
+            # Mark the state as expanded and record its scores
+            self.closed.add(current)
+            self.step += 1
+            g = self.g_score[current]
+            h = self.heuristic(current)
+
+            print(f"\n+----------------- Step {self.step}: {CYAN}A* Search{RESET} ------------------+")
+            print(f"| Expanded Node       : {CYAN}({current.current_row}, {current.current_column}){RESET}   g={g} h={h} f={f}")
+
+            # If the current state is the goal then build and show the path
+            if current.is_goal(self.maze):
+                print("+------------------------------------------------------------------+")
+                self.completed = True
+                path = self.construct_path(current)
+                self.result(path)
+                return path
+
+            # Find all valid neighbours of the current state
+            children = successors(current, self.maze)  # child.parent is already set to current
+            self.trace(children, g)
+
+        # Frontier is empty and the goal was never reached
+        self.result(None)
         return None
 
-    counter = count()  # tie-breaker so heapq never has to compare two States directly
-    g_score = {start: 0}
-    open_heap = [(heuristic(start, maze), next(counter), start)]  # (f, tie, state)
-    closed = set()
-
-    step = 0
-    max_frontier = 1
-
-    while open_heap:
-        f, _, current = heapq.heappop(open_heap)
-
-        if current in closed:
-            continue  # stale entry left behind by an earlier, worse relaxation of this cell
-
-        closed.add(current)
-        step += 1
-        g = g_score[current]
-        h = heuristic(current, maze)
-
-        print(f"\n+----------------- Step {step}: {CYAN}A* Search{RESET} ------------------+")
-        print(f"| Expanded Node       : {CYAN}({current.current_row}, {current.current_column}){RESET}   g={g} h={h} f={f}")
-
-        if current == goal:
-            print("+------------------------------------------------------------------+")
-
-            path = []
-            node = current
-            while node is not None:
-                path.append((node.current_row, node.current_column))
-                node = node.parent
-            path.reverse()
-
-            path_str = " -> ".join(f"({r},{c})" for r, c in path)
-            print(f"\nPath found! Length: {len(path)}")
-            print(f"Path: {GREEN}{path_str}{RESET}")
-
-            print(f"\n{CYAN}========================== Result =========================={RESET}")
-            print(f"Completeness                            : {GREEN}Completed{RESET}")
-            print("Cost (Length of Path)                   :", len(path))
-            print("Time Efficiency (Nodes Expanded)        :", step)
-            print("Space Efficiency (Max Nodes in Frontier):", max_frontier)
-            return path
-
-        children = successors(current, maze)  # child.parent is already set to current
+    # Print the step details and add the neighbours to the frontier
+    def trace(self, children, g):
         relaxed = []
         for child in children:
+            # The cost to reach a neighbour is always one more step than the current state
             tentative_g = g + 1
-            if child not in g_score or tentative_g < g_score[child]:
-                g_score[child] = tentative_g
-                f_child = tentative_g + heuristic(child, maze)
-                heapq.heappush(open_heap, (f_child, next(counter), child))
-                relaxed.append((child.current_row, child.current_column, tentative_g, heuristic(child, maze), f_child))
+            # Only keep this neighbour if it is new, or the path found to it is better than before
+            if child not in self.g_score or tentative_g < self.g_score[child]:
+                self.g_score[child] = tentative_g
+                f_child = tentative_g + self.heuristic(child)
+                heapq.heappush(self.open_heap, (f_child, next(self.counter), child))
+                relaxed.append((child.current_row, child.current_column, tentative_g, self.heuristic(child), f_child))
 
-        max_frontier = max(max_frontier, len(open_heap))
+        # Update the largest frontier size seen so far, for the space efficiency stat
+        self.max_frontier = max(self.max_frontier, len(self.open_heap))
 
-        # One row per still-live state (deduped), sorted by f, for a readable open list
+        # Build a list of the states still waiting in the frontier, sorted by f score
         open_preview = sorted(
             (
-                (s.current_row, s.current_column, sg, heuristic(s, maze), sg + heuristic(s, maze))
-                for s, sg in g_score.items()
-                if s not in closed
+                (s.current_row, s.current_column, sg, self.heuristic(s), sg + self.heuristic(s))
+                for s, sg in self.g_score.items()
+                if s not in self.closed
             ),
             key=lambda t: t[4]
         )
@@ -90,8 +106,33 @@ def a_star(maze, start_row, start_column):
         print(f"| Frontier Size       : {len(open_preview)}")
         print("+------------------------------------------------------------------+")
 
-    print(f"\n{CYAN}========================== Result =========================={RESET}")
-    print(f"Completeness                            : {RED}Not Complete (No solution has found){RESET}")
-    print("Time Efficiency (Nodes Expanded)        :", step)
-    print("Space Efficiency (Max Nodes in Frontier):", max_frontier)
-    return None
+    # Reconstruct the path from goal back to start
+    def construct_path(self, current):
+        path = []
+        node = current
+        # Walk backwards using the parent of each state until reaching the start
+        while node is not None:
+            path.append((node.current_row, node.current_column))
+            node = node.parent
+        path.reverse()  # reverse so the path goes from start to goal
+
+        path_str = " -> ".join(f"({r},{c})" for r, c in path)
+        print(f"\nPath found! Length: {len(path)}")
+        print(f"Path: {GREEN}{path_str}{RESET}")
+        return path
+
+    # Print out the completeness, cost, time and space of the search
+    def result(self, path):
+        print(f"\n{CYAN}========================== Result =========================={RESET}")
+        print("Completeness                            : ", end="")
+        if self.completed:
+            # search reached the goal
+            print(f"{GREEN}Completed{RESET}")
+        else:
+            # frontier ran out before reaching the goal
+            print(f"{RED}Not Complete (No solution has found){RESET}")
+
+        if path is not None:
+            print("Cost (Length of Path)                   :", len(path))
+        print("Time Efficiency (Nodes Expanded)        :", self.step)
+        print("Space Efficiency (Max Nodes in Frontier):", self.max_frontier)

@@ -1,6 +1,6 @@
 from Maze_generator import generate_maze
 from Maze import Maze
-from A_Star import a_star
+from A_Star import AStar
 
 GREEN = "\033[92m"
 RESET = "\033[0m"
@@ -20,4 +20,4 @@ for row in maze_map:
             colored_row.append(str(cell))
     print(" ".join(colored_row))
 
-path = a_star(maze, 0, 0)
+path = AStar(maze, 0, 0).a_star()

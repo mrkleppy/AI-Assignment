@@ -13,12 +13,12 @@ class DepthFirstSearch():
 
         frontier = [start] # DFS stack
         visited = {start} # stores non duplicate values. here, stores visited and rejecting duplicates
+        current = start
 
         while frontier: # proceed if stack has nodes
             self.numOfIteration += 1
 
             current = frontier.pop(0) # get first element
-
 
             if current.is_goal(maze):
                 self.completed = True
@@ -34,6 +34,8 @@ class DepthFirstSearch():
                     if len(frontier) > self.maxFrontier: self.maxFrontier = len(frontier)
 
             trace = self.trace(start, maze, current, frontier, visited, children, self.completed)
+
+        return current
         
     def trace(self, start, maze, current, frontier, visited, children, completed):
         print(f"============= Step {self.numOfIteration} =============")
@@ -60,7 +62,7 @@ class DepthFirstSearch():
         print("========================== Result ==========================")
         print("Completeness                            : ", end = "")
         if self.completed: print("Completed")
-        else: print("Not Complete (No solution has found)")
+        else: print("Incomplete (No solution has found)")
         print("Cost (Length of Path)                   :", len(path)) 
         print("Time Efficiency (Nodes Expanded)        :", self.numOfIteration)
         print("Space Efficiency (Max Nodes in Frontier):", self.maxFrontier)

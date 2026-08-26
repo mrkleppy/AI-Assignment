@@ -196,24 +196,49 @@ test_cases = [
     },
     {
         "name": "Test data 10",
-        "rows": 10,
-        "cols": 10,
-        "start": (0, 0),
-        "end": (9, 9),
+        "rows": 15,
+        "cols": 15,
+        "start": (14, 14),
+        "end": (0, 0),
         "grid": [
-            [1, 1, 0, 0, 1, 0, 1, 1, 1, 1],
-            [0, 1, 1, 1, 1, 1, 0, 1, 0, 0],
-            [1, 0, 1, 0, 0, 1, 0, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-            [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-            [1, 0, 1, 1, 1, 1, 1, 0, 1, 1],
-            [1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
-            [0, 1, 0, 1, 1, 1, 0, 0, 1, 1],
-            [1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-            [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0],
+            [1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
+            [1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1],
+            [1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+            [0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+            [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1],
+            [1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0],
+            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
         ],
-        "note": "Top Left Start, Bottom Right End, control test data, intended to be impossible to solve"
+        "note": "Bottom Right Start, Top Left End, imperfect maze with multiple possible paths"
     },
+    {
+        "name": "Test data 11",
+    "rows": 10,
+    "cols": 10,
+    "start": (0, 0),
+    "end": (9, 9),
+    "grid": [
+        [1, 1, 0, 0, 1, 0, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 0, 1, 0, 0],
+        [1, 0, 1, 0, 0, 1, 0, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+        [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+        [1, 0, 1, 1, 1, 1, 1, 0, 1, 1],
+        [1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
+        [0, 1, 0, 1, 1, 1, 0, 0, 1, 1],
+        [1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+    ],
+    "note": "Control test data, intentionally impossible to solve"
+    }
 ]
 
 # Defining maze rules
@@ -280,6 +305,7 @@ class BFS:
         visited = {start}
         parent_map = {start: None}          # for path reconstruction
         step = 0
+        max_frontier_size = 0
 
         while queue:
             current, level = queue.popleft()
@@ -309,6 +335,10 @@ class BFS:
             print(f"Current Frontier    : {frontier_coords}")
             print(f"Frontier Size : {len(frontier_coords)}")
 
+            # Track maximum frontier size
+            if len(queue) > max_frontier_size:
+                max_frontier_size = len(queue)
+
             # ---- Check goal ----
             if current == goal:
                 # Reconstruct the path
@@ -323,6 +353,11 @@ class BFS:
                 path_str = " -> ".join([f"({r},{c})" for r, c in path])
                 print(f"\nPath found! Length: {len(path) - 1}")
                 print(f"Path: {GREEN}{path_str}{RESET}")
+
+                # Time and Space Efficiency
+                print(f"\n--- Efficiency Metrics ---")
+                print(f"Time Efficiency (Nodes Expanded): {step}")
+                print(f"Space Efficiency (Max Frontier Size): {max_frontier_size}")
 
                 return path
 
@@ -969,7 +1004,7 @@ def print_maze_with_path(maze_map, path):
         
 def main():
     while True:
-        print("Enter 0 to exit or choose a test case number (1-10):")
+        print("Enter 0 to exit or choose a test case number (1-11):")
         
         try:
             caseNo = int(input("Enter test case number: "))
@@ -981,7 +1016,7 @@ def main():
             print("Exiting program.\n")
             break
             
-        if caseNo < 1 or caseNo > 10:
+        if caseNo < 1 or caseNo > 11:
             print("Invalid test case number.\n")
             continue
             

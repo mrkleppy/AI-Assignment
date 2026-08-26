@@ -1,6 +1,11 @@
+import heapq
 from collections import deque
+from itertools import count
 
 GREEN = "\033[92m"
+BLUE = "\033[0;34m"
+RED = "\033[31m"
+CYAN = "\033[0;36m"
 RESET = "\033[0m"
 
 # Test datas
@@ -202,10 +207,10 @@ test_cases = [
             [1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
             [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
             [1, 0, 1, 1, 1, 1, 1, 0, 1, 1],
-            [1, 1, 0, 0, 0, 0, 1, 1, 0, 1],
-            [0, 1, 1, 1, 1, 0, 0, 1, 0, 1],
-            [1, 1, 0, 1, 0, 1, 1, 1, 1, 0],
-            [1, 0, 1, 1, 1, 1, 0, 1, 0, 1],
+            [1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
+            [0, 1, 0, 1, 1, 1, 0, 0, 1, 1],
+            [1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+            [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
         ],
         "note": "Top Left Start, Bottom Right End, control test data, intended to be impossible to solve"
     },
@@ -259,101 +264,365 @@ def successors(current_state, maze):
 
     return children
 
+# Breadth-First Search
+class BFS:
+    def bfs(self, maze, start_row, start_column):
+        start = State(start_row, start_column)
+        goal = State(maze.end_row, maze.end_column)
+
+        if not start.is_valid(maze) or not goal.is_valid(maze):
+            print("Start or goal is invalid (wall or out of bounds).")
+            return None
+
+        from collections import deque
+
+        queue = deque([(start, 0)])          # (state, level)
+        visited = {start}
+        parent_map = {start: None}          # for path reconstruction
+        step = 0
+
+        while queue:
+            current, level = queue.popleft()
+            step += 1
+
+            # ---- Print expansion information ----
+            print(f"\nStep {step}: \n")
+            print(f"Expanded Node    : ({current.current_row}, {current.current_column})")
+
+            # All valid neighbours (possible moves)
+            all_moves = successors(current, maze)
+            all_moves_coords = [(m.current_row, m.current_column) for m in all_moves]
+            print(f"All Possible Moves    : {all_moves_coords}")
+
+            # Add unvisited neighbours to the frontier
+            added = []
+            for child in all_moves:
+                if child not in visited:
+                    visited.add(child)
+                    parent_map[child] = current
+                    queue.append((child, level + 1))
+                    added.append((child.current_row, child.current_column))
+            print(f"Added to Frontier    : {added}")
+
+            # Current frontier = all states currently in the queue
+            frontier_coords = [(s.current_row, s.current_column) for s, _ in queue]
+            print(f"Current Frontier    : {frontier_coords}")
+            print(f"Frontier Size : {len(frontier_coords)}")
+
+            # ---- Check goal ----
+            if current == goal:
+                # Reconstruct the path
+                path = []
+                node = current
+                while node is not None:
+                    path.append((node.current_row, node.current_column))
+                    node = parent_map.get(node)
+                path.reverse()
+
+                # Print path in GREEN
+                path_str = " -> ".join([f"({r},{c})" for r, c in path])
+                print(f"\nPath found! Length: {len(path) - 1}")
+                print(f"Path: {GREEN}{path_str}{RESET}")
+
+                return path
+
+        # No path found
+        print("\nNo path found from start to goal.")
+        return None
+
+# Depth-First Search
+class DepthFirstSearch():
+    maxFrontier = 0
+    numOfIteration = 0
+    completed = False
+
+    def dfs(self, maze, start_row, start_column):
+        start = State(start_row, start_column)
+        if start.is_goal(maze): return start
+
+        frontier = [start] # DFS stack
+        visited = {start} # stores non duplicate values. here, stores visited and rejecting duplicates
+        current = start
+
+        while frontier: # proceed if stack has nodes
+            self.numOfIteration += 1
+
+            current = frontier.pop(0) # get first element
+
+            if current.is_goal(maze):
+                self.completed = True
+                return current
+
+            visited.add(current)
+
+            children = successors(current, maze)
+            for child in children: # add tracing
+                if child not in visited and child not in frontier:
+                    frontier.insert(0, child)
+
+                    if len(frontier) > self.maxFrontier: self.maxFrontier = len(frontier)
+
+            trace = self.trace(start, maze, current, frontier, visited, children, self.completed)
+
+        return current
+        
+    def trace(self, start, maze, current, frontier, visited, children, completed):
+        print(f"============= Step {self.numOfIteration} =============")
+        print(f"Current State: ({current.current_row}, {current.current_column})")
+        print(f"Successors   : ", end = "")
+        print(", ".join(f"({node.current_row}, {node.current_column})" for node in children), end="")
+        print(f"\nFrontier     : ", end = "")
+        print(", ".join(f"({node.current_row}, {node.current_column})" for node in frontier), end="")
+        print(f"\nVisited      : ", end = "")
+        print(", ".join(f"({node.current_row}, {node.current_column})" for node in visited), end="")
+        print("\n")
+
+    def construct_path(self, current, completed):
+        
+        if (completed == False):
+            print("No solution has found")
+            return []
+        
+        path = [current]
+        self.parent = current.parent
+
+        while self.parent:
+            path.insert(0, self.parent)
+            self.parent = self.parent.parent
+
+        return path
+
+    def result(self, path):
+        print("========================== Result ==========================")
+        print("Completeness                            : ", end = "")
+        if self.completed: print("Completed")
+        else: print("Incomplete (No solution has found)")
+        print("Cost (Length of Path)                   :", len(path) - 1) 
+        print("Time Efficiency (Nodes Expanded)        :", self.numOfIteration)
+        print("Space Efficiency (Max Nodes in Frontier):", self.maxFrontier)
+
 # Bidrectional Breadth-First Search
 class BidirectionalBFS:
-    def bidirectional_bfs(self, maze, start_row, start_column):
-        # Initialise the start and goal point
-        initial_state = State(start_row, start_column)
-        goal_state = State(maze.end_row, maze.end_column)
+    def __init__(self, maze, start_row, start_column):
+        self.maze = maze
+        self.start_row = start_row
+        self.start_column = start_column
+        self.number_of_expanded_nodes = 0
+        self.maximum_frontier_size = 0
+        self.completed = False
+        self.final_meeting_state = None
 
+    def bidirectional_bfs(self):
+        # Initialise the start and goal point
+        initial_state = State(self.start_row, self.start_column)
+        goal_state = State(self.maze.end_row, self.maze.end_column)
+    
         # queue for BFS from start and goal
         # deque is for efficient pop from left and append to right, for both the exit and start
         queue_from_initial = deque([initial_state])
         queue_from_goal = deque([goal_state])
-
+    
         # visited sets for BFS from start and goal
         visited_from_start = {initial_state}
         visited_from_goal = {goal_state}
-
+    
         # parent dictionaries for BFS from start and goal to reconstruct the path
         parent_from_initial = {initial_state: None}
         parent_from_goal = {goal_state: None}
-
+    
         step_number = 0  # Step counter for showing the number of steps taken in the search
-
-        print("\nBidirectional Breadth-First Search\n")
-        print(f"{'Step':<6} {'Direction':<10} {'Expanded Node':<18} {'Frontier':<30} {'Meeting State':<18}")
-
+        self.maximum_frontier_size = len(queue_from_initial) + len(queue_from_goal)  # Space efficiency in practice: max total frontier size stored at one time
+        meeting_state_object = None # The meeting point object where the two searches meet, used to reconstruct the path
+    
+        print("\nBidirectional Breadth-First Search")
+        print("=" * 70)
+    
+        # The start and goal searches will continue until either one of the queues is empty or a meeting point is found
         while queue_from_initial and queue_from_goal:
+            step_number += 1 # Increment the step counter for each iteration of the search
+    
             # Since this is a bidirectional BFS, we will alternate between expanding the search from the start and the goal.
+    
+            # --------------------------------------------------- BFS from start ---------------------------------------------------
+            current_state_from_initial = queue_from_initial.popleft() # LIFO: pop from left, FIFO: append to right
+            self.number_of_expanded_nodes += 1 # Increment the number of expanded nodes for time complexity
+    
+            # Store coordinates for printing
+            expanded_node = (
+                current_state_from_initial.current_row,
+                current_state_from_initial.current_column
+            )
+            all_possible_moves = []
+            added_to_frontier = []
+    
+            # Generate successors for the current state from the initial search and process them
+            for child_state in successors(current_state_from_initial, self.maze):
+                child_position = (
+                    child_state.current_row,
+                    child_state.current_column
+                )
 
-            # BFS from start
-            current_state_from_initial = queue_from_initial.popleft()
-            step_number += 1
-
-            expanded_node = (current_state_from_initial.current_row, current_state_from_initial.current_column)
-            meeting_state = "-"
-
-            frontier_updates = []
-
-            for child_state in successors(current_state_from_initial, maze):
+                all_possible_moves.append(child_position)
+    
                 if child_state not in visited_from_start:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from start
                     visited_from_start.add(child_state)
                     parent_from_initial[child_state] = current_state_from_initial
                     queue_from_initial.append(child_state)
+    
+                    # Store the added child position for printing
+                    added_to_frontier.append(child_position)
 
-                    frontier_updates.append((child_state.current_row, child_state.current_column))
-
+                    # Calculate the current total frontier size by summing the lengths of both queues (For time efficiency and space efficiency)
+                    current_total_frontier_size = len(queue_from_initial) + len(queue_from_goal)
+    
+                    # Update the maximum frontier size if the current total frontier size exceeds it
+                    if current_total_frontier_size > self.maximum_frontier_size:
+                        self.maximum_frontier_size = current_total_frontier_size
+    
                     if child_state in visited_from_goal:
                         # If the child is found in the goal's visited set, we reconstruct the path from start to goal
-                        meeting_state = (child_state.current_row, child_state.current_column)
-                        print(f"{step_number:<6} {'Start':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
-                        path = self.construct_path(child_state, parent_from_initial, parent_from_goal)
-                        print("\nBidirectional-Breadth First Search Path:", path)
-                        return path
-
-            print(f"{step_number:<6} {'Start':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
-
-            # BFS from goal
+                        self.final_meeting_state = child_position
+                        meeting_state_object = child_state
+                        self.completed = True
+                        break
+    
+            # Store the current coordinates of the frontiers for printing
+            start_frontier_coordinates = [
+                (state.current_row, state.current_column)
+                for state in queue_from_initial
+            ]
+            goal_frontier_coordinates = [
+                (state.current_row, state.current_column)
+                for state in queue_from_goal
+            ]
+    
+            # Prints the current step information, including expanded nodes, all possible moves, added frontier nodes, and the current state of the frontiers for both searches
+            self.trace(step_number, "Start Search", expanded_node, all_possible_moves, added_to_frontier, start_frontier_coordinates, goal_frontier_coordinates)
+    
+            if self.final_meeting_state is not None:
+                break
+    
+            # --------------------------------------------------- BFS from goal ---------------------------------------------------
             current_state_from_goal = queue_from_goal.popleft()
-            step_number += 1
-
-            expanded_node = (current_state_from_goal.current_row, current_state_from_goal.current_column)
-            meeting_state = "-"
-
-            frontier_updates = []
-
-            for child_state in successors(current_state_from_goal, maze):
+            self.number_of_expanded_nodes += 1
+    
+            expanded_node = (
+                current_state_from_goal.current_row,
+                current_state_from_goal.current_column
+            )
+    
+            all_possible_moves = []
+            added_to_frontier = []
+    
+            for child_state in successors(current_state_from_goal, self.maze):
+                child_position = (
+                    child_state.current_row,
+                    child_state.current_column
+                )
+    
+                all_possible_moves.append(child_position)
+    
                 if child_state not in visited_from_goal:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from goal
                     visited_from_goal.add(child_state)
                     parent_from_goal[child_state] = current_state_from_goal
                     queue_from_goal.append(child_state)
-
-                    frontier_updates.append((child_state.current_row, child_state.current_column))
-
+    
+                    added_to_frontier.append(child_position)
+    
+                    current_total_frontier_size = len(queue_from_initial) + len(queue_from_goal)
+    
+                    if current_total_frontier_size > self.maximum_frontier_size:
+                        self.maximum_frontier_size = current_total_frontier_size
+    
                     if child_state in visited_from_start:
                         # If the child is found in the start's visited set, we reconstruct the path from start to goal
-                        meeting_state = (child_state.current_row, child_state.current_column)
-                        print(f"{step_number:<6} {'Goal':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
-                        path = self.construct_path(child_state, parent_from_initial, parent_from_goal)
-                        print("Bidirectional-Breadth First Search Path:", path)
-                        return path
+                        self.final_meeting_state = child_position
+                        meeting_state_object = child_state
+                        self.completed = True
+                        break
+    
+            start_frontier_coordinates = [
+                (state.current_row, state.current_column)
+                for state in queue_from_initial
+            ]
+            goal_frontier_coordinates = [
+                (state.current_row, state.current_column)
+                for state in queue_from_goal
+            ]
+    
+            # Prints the current step information, including expanded nodes, all possible moves, added frontier nodes, and the current state of the frontiers for both searches
+            self.trace(step_number, "Goal Search", expanded_node, all_possible_moves, added_to_frontier, start_frontier_coordinates, goal_frontier_coordinates)
+    
+            # If a meeting point is found, we break out of the loop to reconstruct the path
+            if self.final_meeting_state is not None:
+                break
+    
+        # If a meeting point is found, we reconstruct the path from start to goal through the meeting point
+        if self.final_meeting_state is not None:
+            path = self.construct_path(
+                meeting_state_object,
+                parent_from_initial,
+                parent_from_goal
+            )
+            self.result(path)
+            return path
+    
+        #If no meeting point is found, we print no path was found and return None
+        self.result(None)
+        return None
 
-            print(f"{step_number:<6} {'Goal':<10} {str(expanded_node):<18} {str(frontier_updates):<30} {str(meeting_state):<18}")
-
-        print("\nNo path found.")
-        return None  # If no path is found, return none
-
-    def construct_path(self, meeting_state, parent_from_start, parent_from_goal):
+    # For printing the details of each steps in the bidirectional BFS search
+    def trace(self, step_number, direction, expanded_node, all_possible_moves, added_to_frontier, start_frontier_coordinates, goal_frontier_coordinates):
+        # Color coding Start Search for better visualisation
+        if direction == "Start Search":
+            direction_color = GREEN
+            start_frontier_label = f"{RED}Start Frontier{RESET}"
+            goal_frontier_label = "Goal Frontier"
+        else:
+            direction_color = BLUE
+            start_frontier_label = "Start Frontier"
+            goal_frontier_label = f"{RED}Goal Frontier{RESET}"
+            
+        print(f"\n+----------------- Step {step_number}: From the {direction_color}{direction}{RESET} ------------------+")
+        print(f"| Expanded Node       : {expanded_node}")
+        print(f"| All Possible Moves  : {all_possible_moves}")
+        print(f"| Added to Frontier   : {added_to_frontier}")
+        print(f"| {start_frontier_label}      : {start_frontier_coordinates}")
+        print(f"| {goal_frontier_label}       : {goal_frontier_coordinates}")
+        print(f"| Total Frontier Size : {len(start_frontier_coordinates) + len(goal_frontier_coordinates)}")
+        print("+------------------------------------------------------------------+")
+        
+    # For printing the final results of the bidirectional BFS search
+    def result(self, path):
+        print("\n" + "=" * 70)
+        print("Bidirectional Breadth-First Search Results")
+        print()
+        
+        # 
+        if self.completed and path is not None:
+            print(f"Completeness                             : {GREEN}Completed{RESET}")
+            print("Meeting Point                            :", self.final_meeting_state)
+            print("Bidirectional Breadth-First Search Path  :", path)
+            print("Cost (Length of Path)                    :", len(path) - 1)
+            
+        else:
+            print(f"Completeness                             : {RED}Not Complete (No solution has found){RESET}")
+            print("Meeting Point                            : None")  
+              
+        print("Time Efficiency (Nodes Expanded)         :", self.number_of_expanded_nodes)
+        print("Space Efficiency (Maximum Frontier Size) :", self.maximum_frontier_size)
+        
+    # For reconstructing the path from start to goal through the meeting point
+    def construct_path(self, meeting_state, parent_from_initial, parent_from_goal):
         # Reconstruct the path from start to goal through the meeting point
         # First, reconstruct the path from start to meeting point
         path_from_start = []
         current_node = meeting_state
         while current_node is not None:
             path_from_start.append((current_node.current_row, current_node.current_column))
-            current_node = parent_from_start.get(current_node)
+            current_node = parent_from_initial.get(current_node)
         path_from_start.reverse()  # Reverses the path from start to meeting point to get the correct order from start to meeting point
 
         # Secondly, reconstruct the path from meeting point to goal
@@ -365,6 +634,138 @@ class BidirectionalBFS:
 
         return path_from_start + path_from_goal  # Constructs the path from start to goal through the meeting point
 
+# A*
+class AStar:
+    # Initialise for the A* search
+    def __init__(self, maze, start_row, start_column):
+        # Store the maze and work out the start and goal states
+        self.maze = maze
+        self.start = State(start_row, start_column)
+        self.goal = State(maze.end_row, maze.end_column)
+
+        # counter is used to break ties in the heap so two states are never compared directly
+        self.counter = count()
+        # g_score keeps the best known cost from start to each state found so far
+        self.g_score = {self.start: 0}
+        # open_heap is the priority frontier, ordered by f = g + h
+        self.open_heap = [(self.heuristic(self.start), next(self.counter), self.start)]
+        # closed holds every state that has already been expanded
+        self.closed = set()
+
+        # stats used later to print the result summary
+        self.step = 0
+        self.max_frontier = 1
+        self.completed = False
+
+    # Calculate the heuristic value by performing manhattan distance
+    def heuristic(self, state):
+        return abs(state.current_row - self.maze.end_row) + abs(state.current_column - self.maze.end_column)
+
+    # A* search algorithm
+    def a_star(self):
+        # If the start or goal is a wall or out of bounds then end
+        if not self.start.is_valid(self.maze) or not self.goal.is_valid(self.maze):
+            print("Start or goal is invalid (wall or out of bounds).")
+            return None
+
+        # Keep expanding the frontier until it is empty or the goal is found
+        while self.open_heap:
+            # Take the state with the lowest f score from the frontier
+            f, _, current = heapq.heappop(self.open_heap)
+
+            # Skip this entry if it was already expanded through a better path
+            if current in self.closed:
+                continue
+
+            # Mark the state as expanded and record its scores
+            self.closed.add(current)
+            self.step += 1
+            g = self.g_score[current]
+            h = self.heuristic(current)
+
+            print(f"\n+----------------- Step {self.step}: {CYAN}A* Search{RESET} ------------------+")
+            print(f"| Expanded Node       : {CYAN}({current.current_row}, {current.current_column}){RESET}   g={g} h={h} f={f}")
+
+            # If the current state is the goal then build and show the path
+            if current.is_goal(self.maze):
+                print("+------------------------------------------------------------------+")
+                self.completed = True
+                path = self.construct_path(current)
+                self.result(path)
+                return path
+
+            # Find all valid neighbours of the current state
+            children = successors(current, self.maze)  # child.parent is already set to current
+            self.trace(children, g)
+
+        # Frontier is empty and the goal was never reached
+        self.result(None)
+        return None
+
+    # Print the step details and add the neighbours to the frontier
+    def trace(self, children, g):
+        relaxed = []
+        for child in children:
+            # The cost to reach a neighbour is always one more step than the current state
+            tentative_g = g + 1
+            # Only keep this neighbour if it is new, or the path found to it is better than before
+            if child not in self.g_score or tentative_g < self.g_score[child]:
+                self.g_score[child] = tentative_g
+                f_child = tentative_g + self.heuristic(child)
+                heapq.heappush(self.open_heap, (f_child, next(self.counter), child))
+                relaxed.append((child.current_row, child.current_column, tentative_g, self.heuristic(child), f_child))
+
+        # Update the largest frontier size seen so far, for the space efficiency stat
+        self.max_frontier = max(self.max_frontier, len(self.open_heap))
+
+        # Build a list of the states still waiting in the frontier, sorted by f score
+        open_preview = sorted(
+            (
+                (s.current_row, s.current_column, sg, self.heuristic(s), sg + self.heuristic(s))
+                for s, sg in self.g_score.items()
+                if s not in self.closed
+            ),
+            key=lambda t: t[4]
+        )
+
+        print(f"| Possible Moves      : {[(c.current_row, c.current_column) for c in children]}")
+        print(f"| Relaxed / Added     : {relaxed}")
+        print(f"| Open List (f-sorted): {open_preview}")
+        print(f"| Frontier Size       : {len(open_preview)}")
+        print("+------------------------------------------------------------------+")
+
+    # Reconstruct the path from goal back to start
+    def construct_path(self, current):
+        path = []
+        node = current
+        # Walk backwards using the parent of each state until reaching the start
+        while node is not None:
+            path.append((node.current_row, node.current_column))
+            node = node.parent
+        path.reverse()  # reverse so the path goes from start to goal
+
+        path_str = " -> ".join(f"({r},{c})" for r, c in path)
+        print(f"\nPath found! Length: {len(path) - 1}")
+        print(f"Path: {GREEN}{path_str}{RESET}")
+        return path
+
+    # Print out the completeness, cost, time and space of the search
+    def result(self, path):
+        print(f"\n{CYAN}========================== Result =========================={RESET}")
+        print("Completeness                            : ", end="")
+        if self.completed:
+            # search reached the goal
+            print(f"{GREEN}Completed{RESET}")
+        else:
+            # frontier ran out before reaching the goal
+            print(f"{RED}Not Complete (No solution has found){RESET}")
+
+        if path is not None:
+            print("Cost (Length of Path)                   :", len(path) - 1)
+        print("Time Efficiency (Nodes Expanded)        :", self.step)
+        print("Space Efficiency (Max Nodes in Frontier):", self.max_frontier)
+
+
 # SAHC
 class SAHC:
     # Initialise for the SAHC
@@ -375,6 +776,7 @@ class SAHC:
         self.visited = set()
         self.level = 0
         self.heuristic = self.calculate_heuristic(self.current_state, self.maze)
+        self.maxMoveCount = 0
 
     # SAHC serach Algorithm
     def SAHC(self):
@@ -384,22 +786,24 @@ class SAHC:
 
         # Print out the process of each level
         while self.heuristic > 0:
-            print("\n---------")
-            print(f"LEVEL {self.level}")
-            print("---------")
+            print("\n+-----------------------------------------------------------")
+            print(f"|LEVEL {self.level}")
+            print("+-----------------------------------------------------------")
             print( # current position
-                f"CURRENT NODE: {self.current_state.current_row}, "
-                f"{self.current_state.current_column}, {self.heuristic}"
+                f"| CURRENT NODE: ({self.current_state.current_row}, "
+                f"{self.current_state.current_column}) f(h) = {self.heuristic}"
             )
 
             # Add the current state to visited to prevent going back
             self.visited.add(self.current_state)
             # Find all possible moves of current state
             possible_moves = self.get_possible_move(self.current_state, self.maze)
+            self.maxMoveCount = self.compareMoveCount(len(possible_moves))
 
             # If no possible moves is found then end
             if not possible_moves:
-                print("No possible moves from current state")
+                print("| No possible moves from current state")
+                print("+-----------------------------------------------------------")
                 break
             
             # Find all the next state of all the possible moves
@@ -411,10 +815,19 @@ class SAHC:
 
             # rearrange the next state list with the heuristic value in ascending order
             next_states.sort(key=lambda x: x[1])
-            print("OPEN LIST:", [ # print out the oen list
-                (state.current_row, state.current_column, heuristic)
-                for state, heuristic in next_states
-            ])
+            print("| OPEN LIST: [", end="")
+            for state, heuristic in next_states: # print out the oen list
+                if ((state, heuristic) == next_states[0]):
+                    print(
+                        f"({self.current_state.current_row}, {self.current_state.current_column})"
+                        f" f(h) = {self.heuristic}", end=""
+                    )
+                else:
+                    print(
+                        f", ({self.current_state.current_row}, {self.current_state.current_column})"
+                        f" f(h) = {self.heuristic}", end=""
+                    )
+            print("]")
 
             # The best next state will be the next state with lowest heuristic value
             # After sorting the next state with lowest heuristic value will be at the front of the list
@@ -429,23 +842,54 @@ class SAHC:
                 self.path.append(self.current_state) # store as the path chosen
                 self.level += 1 # Proceed to next level
                 # print the choice
-                print("selected:", self.current_state.current_row, self.current_state.current_column, self.heuristic)
+                print(
+                    f"| SELECTED: ({self.current_state.current_row}, "
+                    f"{self.current_state.current_column}) f(h) = {self.heuristic}"
+                )
+                print("+-----------------------------------------------------------")
             else:
                 # No better path to proceed, show the details
-                print("there is no better move or already visited")
-                print("\n ------------------------------------------------------------")
-                print("Initial State:", self.path[0].current_row, self.path[0].current_column)
-                print("Goal State:", self.maze.end_row, self.maze.end_column)
-                print("Path:", [(state.current_row, state.current_column) for state in self.path])
-                print("LOCAL MAXIMUM: There is no solution")
+                print("| There is no better move or already visited")
+                print("+-----------------------------------------------------------")
+                print("\n+-----------------------------------------------------------")
+                print("| RESULT")
+                print("+-----------------------------------------------------------")
+                print(f"| Initial State: ({self.path[0].current_row}, {self.path[0].current_column})")
+                print(f"| Goal State: ({self.maze.end_row}, {self.maze.end_column})")
+                print("| Path: [", end="")
+                for state in self.path:
+                    if (state == self.path[0]):
+                        print(f"({state.current_row}, {state.current_column})", end="")
+                    else:
+                        print(f", ({state.current_row}, {state.current_column})", end="")
+                print("]")
+                print("|")
+                print("| Completeness: Not complete, local maxima hit!")
+                print(f"| Cost: {len(self.path) - 1} length of path")
+                print(f"| Time efficiency: {len(self.path) } node(s) expanded")
+                print(f"| Space efficiency: {self.maxMoveCount} byte(s)")
+                print("+-----------------------------------------------------------")
                 return None
 
         # print out all the data
-        print("\n ------------------------------------------------------------")
-        print("Initial State:", self.path[0].current_row, self.path[0].current_column)
-        print("Goal State:", self.maze.end_row, self.maze.end_column)
-        print("Path:", [(state.current_row, state.current_column) for state in self.path])
-        print("Solution Found!")
+        print("\n+-----------------------------------------------------------")
+        print("| RESULT")
+        print("+-----------------------------------------------------------")
+        print(f"| Initial State: ({self.path[0].current_row}, {self.path[0].current_column})")
+        print(f"| Goal State: ({self.maze.end_row}, {self.maze.end_column})")
+        print("| Path: [", end="")
+        for state in self.path:
+            if (state == self.path[0]):
+                print(f"({state.current_row}, {state.current_column})", end="")
+            else:
+                print(f", ({state.current_row}, {state.current_column})", end="")
+        print("]")
+        print("|")
+        print("| Completeness: Completed, solution found!")
+        print(f"| Cost: {len(self.path) - 1} length of path")
+        print(f"| Time efficiency: {len(self.path)} node(s) expanded")
+        print(f"| Space efficiency: {self.maxMoveCount} byte(s)")
+        print("+-----------------------------------------------------------")
         return self.path
 
     def get_possible_move(self, current_state, maze):
@@ -485,6 +929,12 @@ class SAHC:
     def calculate_heuristic(self, current_state, maze):
         # calculate the heuristic value by performing mamanhattan algorithm distance
         return abs(current_state.current_row - maze.end_row) + abs(current_state.current_column - maze.end_column)
+    
+    def compareMoveCount(self, totalMove):
+        if (totalMove > self.maxMoveCount):
+            return totalMove
+        else:
+            return self.maxMoveCount
 
 # UI for running everything
 def print_maze(maze_map):
@@ -496,6 +946,25 @@ def print_maze(maze_map):
                 colored_row.append(f"{GREEN}{cell}{RESET}")
             else:
                 colored_row.append(str(cell))
+        print(" ".join(colored_row))
+      
+# The maze path with solutions in them  
+def print_maze_with_path(maze_map, path):
+    print("\nMaze with Path Highlighted:")
+    path_coordinates = set(path)
+
+    for row_index, row in enumerate(maze_map):
+        colored_row = []
+        for column_index, cell in enumerate(row):
+            current_position = (row_index, column_index)
+
+            if current_position in path_coordinates:
+                colored_row.append(f"{RED}{cell}{RESET}")
+            elif cell == 1:
+                colored_row.append(f"{GREEN}{cell}{RESET}")
+            else:
+                colored_row.append(str(cell))
+
         print(" ".join(colored_row))
         
 def main():
@@ -546,23 +1015,51 @@ def main():
                 break
             
             if algorithmChoice == 1:
-                path = bfs(maze, start_row, start_column) # WIP
-                print("\nBreadth-First Search Path:", path)
+                path = BFS().bfs(maze, start_row, start_column)
+                
+                if path is not None:
+                    print_maze_with_path(maze_map, path)
+                else:
+                    print("\nBreadth-First Search Path: No solution")
+                    
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 2:
-                path = dfs(maze, start_row, start_column) # WIP
-                print("\nDepth-First Search Path:", path)
+                dfs_solver = DepthFirstSearch()
+                path = dfs_solver.dfs(maze, start_row, start_column)
+                
+                if dfs_solver.completed and path is not None:
+                    dfs_solver.result(dfs_solver.construct_path(path, completed=dfs_solver.completed))
+                    print("\nPath: ", end="")
+                    print(", ".join(f"({s.current_row},{s.current_column})" for s in dfs_solver.construct_path(path, completed=dfs_solver.completed)))
+                    print("")
+                    print_maze_with_path(maze_map, [(s.current_row, s.current_column) for s in dfs_solver.construct_path(path, completed=dfs_solver.completed)])
+                else:
+                    print("\nDepth-First Search Path: No solution")
+                    
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 3:
-                bbfs_solver = BidirectionalBFS()
-                path = bbfs_solver.bidirectional_bfs(maze, start_row, start_column)
+                bidirectional_bfs_solver = BidirectionalBFS(maze, start_row, start_column)
+                path = bidirectional_bfs_solver.bidirectional_bfs()
+                
+                if path is not None:
+                    print_maze_with_path(maze_map, path)
+                else:
+                    print("\nBidirectional Breadth-First Search Path: No solution")
+                
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 4:
-                path = a_star(maze, start_row, start_column) # WIP
-                print("\nA* Path:", path)
+                A_Star_solver = AStar(maze, start_row, start_column)
+                path = A_Star_solver.a_star()
+                
+                if path is not None:
+                    print_maze_with_path(maze_map, path)
+                    print("\nA* Path:", path)
+                else:
+                    print("\nA* Path: No solution")
+
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 5:
@@ -571,7 +1068,7 @@ def main():
                 path = sahc.SAHC()
 
                 if path is not None:
-                    print("\nSteepest-Ascent Hill Climbing Path:", [(s.current_row, s.current_column) for s in path])
+                    print_maze_with_path(maze_map, [(s.current_row, s.current_column) for s in path])
                 else:
                     print("\nSteepest-Ascent Hill Climbing Path: No solution")
                 input("\nPress Enter to return to the main menu...")

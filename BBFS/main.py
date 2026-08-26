@@ -274,6 +274,7 @@ class BFS:
         visited = {start}
         parent_map = {start: None}          # for path reconstruction
         step = 0
+        max_frontier_size = 0
 
         while queue:
             current, level = queue.popleft()
@@ -303,6 +304,10 @@ class BFS:
             print(f"Current Frontier    : {frontier_coords}")
             print(f"Frontier Size : {len(frontier_coords)}")
 
+            # Track maximum frontier size
+            if len(queue) > max_frontier_size:
+                max_frontier_size = len(queue)
+
             # ---- Check goal ----
             if current == goal:
                 # Reconstruct the path
@@ -317,6 +322,11 @@ class BFS:
                 path_str = " -> ".join([f"({r},{c})" for r, c in path])
                 print(f"\nPath found! Length: {len(path)}")
                 print(f"Path: {GREEN}{path_str}{RESET}")
+
+                # Time and Space Efficiency
+                print(f"\n--- Efficiency Metrics ---")
+                print(f"Time Efficiency (Nodes Expanded): {step}")
+                print(f"Space Efficiency (Max Frontier Size): {max_frontier_size}")
 
                 return path
 

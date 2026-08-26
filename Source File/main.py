@@ -321,7 +321,7 @@ class BFS:
 
                 # Print path in GREEN
                 path_str = " -> ".join([f"({r},{c})" for r, c in path])
-                print(f"\nPath found! Length: {len(path)}")
+                print(f"\nPath found! Length: {len(path) - 1}")
                 print(f"Path: {GREEN}{path_str}{RESET}")
 
                 return path
@@ -397,7 +397,7 @@ class DepthFirstSearch():
         print("Completeness                            : ", end = "")
         if self.completed: print("Completed")
         else: print("Incomplete (No solution has found)")
-        print("Cost (Length of Path)                   :", len(path)) 
+        print("Cost (Length of Path)                   :", len(path) - 1) 
         print("Time Efficiency (Nodes Expanded)        :", self.numOfIteration)
         print("Space Efficiency (Max Nodes in Frontier):", self.maxFrontier)
 
@@ -605,7 +605,7 @@ class BidirectionalBFS:
             print(f"Completeness                             : {GREEN}Completed{RESET}")
             print("Meeting Point                            :", self.final_meeting_state)
             print("Bidirectional Breadth-First Search Path  :", path)
-            print("Cost (Length of Path)                    :", len(path))
+            print("Cost (Length of Path)                    :", len(path) - 1)
             
         else:
             print(f"Completeness                             : {RED}Not Complete (No solution has found){RESET}")
@@ -745,7 +745,7 @@ class AStar:
         path.reverse()  # reverse so the path goes from start to goal
 
         path_str = " -> ".join(f"({r},{c})" for r, c in path)
-        print(f"\nPath found! Length: {len(path)}")
+        print(f"\nPath found! Length: {len(path) - 1}")
         print(f"Path: {GREEN}{path_str}{RESET}")
         return path
 
@@ -761,7 +761,7 @@ class AStar:
             print(f"{RED}Not Complete (No solution has found){RESET}")
 
         if path is not None:
-            print("Cost (Length of Path)                   :", len(path))
+            print("Cost (Length of Path)                   :", len(path) - 1)
         print("Time Efficiency (Nodes Expanded)        :", self.step)
         print("Space Efficiency (Max Nodes in Frontier):", self.max_frontier)
 
@@ -865,7 +865,8 @@ class SAHC:
                 print("]")
                 print("|")
                 print("| Completeness: Not complete, local maxima hit!")
-                print(f"| Time efficiency: {len(self.path)} node(s) expanded")
+                print(f"| Cost: {len(self.path) - 1} length of path")
+                print(f"| Time efficiency: {len(self.path) } node(s) expanded")
                 print(f"| Space efficiency: {self.maxMoveCount} byte(s)")
                 print("+-----------------------------------------------------------")
                 return None
@@ -885,7 +886,7 @@ class SAHC:
         print("]")
         print("|")
         print("| Completeness: Completed, solution found!")
-        print(f"| Cost: {len(self.path)} length of path")
+        print(f"| Cost: {len(self.path) - 1} length of path")
         print(f"| Time efficiency: {len(self.path)} node(s) expanded")
         print(f"| Space efficiency: {self.maxMoveCount} byte(s)")
         print("+-----------------------------------------------------------")

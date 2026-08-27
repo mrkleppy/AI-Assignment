@@ -325,7 +325,7 @@ class BFS:
             for child in all_moves:
                 if child not in visited:
                     visited.add(child)
-                    parent_map[child] = current
+                    parent_map[child] = current                        # type: ignore
                     queue.append((child, level + 1))
                     added.append((child.current_row, child.current_column))
             print(f"Added to Frontier    : {added}")
@@ -502,7 +502,7 @@ class BidirectionalBFS:
                 if child_state not in visited_from_start:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from start
                     visited_from_start.add(child_state)
-                    parent_from_initial[child_state] = current_state_from_initial
+                    parent_from_initial[child_state] = current_state_from_initial                      # type: ignore
                     queue_from_initial.append(child_state)
     
                     # Store the added child position for printing
@@ -561,7 +561,7 @@ class BidirectionalBFS:
                 if child_state not in visited_from_goal:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from goal
                     visited_from_goal.add(child_state)
-                    parent_from_goal[child_state] = current_state_from_goal
+                    parent_from_goal[child_state] = current_state_from_goal                  # type: ignore
                     queue_from_goal.append(child_state)
     
                     added_to_frontier.append(child_position)
@@ -719,7 +719,7 @@ class AStar:
             h = self.heuristic(current)
 
             print(f"\n+----------------- Step {self.step}: {CYAN}A* Search{RESET} ------------------+")
-            print(f"| Expanded Node       : {CYAN}({current.current_row}, {current.current_column}){RESET}   g={g} h={h} f={f}")
+            print(f"| {'Expanded Node':<20}: {CYAN}({current.current_row}, {current.current_column}){RESET}   g={g} h={h} f={f}")
 
             # If the current state is the goal then build and show the path
             if current.is_goal(self.maze):
@@ -739,16 +739,21 @@ class AStar:
 
     # Print the step details and add the neighbours to the frontier
     def trace(self, children, g):
+        possible_moves = []
         relaxed = []
         for child in children:
             # The cost to reach a neighbour is always one more step than the current state
             tentative_g = g + 1
+            h_child = self.heuristic(child)
+            f_child = tentative_g + h_child
+            move_str = f"({child.current_row}, {child.current_column}) g={tentative_g} h={h_child} f={f_child}"
+            possible_moves.append(move_str)
+
             # Only keep this neighbour if it is new, or the path found to it is better than before
             if child not in self.g_score or tentative_g < self.g_score[child]:
                 self.g_score[child] = tentative_g
-                f_child = tentative_g + self.heuristic(child)
                 heapq.heappush(self.open_heap, (f_child, next(self.counter), child))
-                relaxed.append((child.current_row, child.current_column, tentative_g, self.heuristic(child), f_child))
+                relaxed.append(move_str)
 
         # Update the largest frontier size seen so far, for the space efficiency stat
         self.max_frontier = max(self.max_frontier, len(self.open_heap))
@@ -762,11 +767,17 @@ class AStar:
             ),
             key=lambda t: t[4]
         )
+        open_preview_labeled = [f"({r}, {c}) g={sg} h={h} f={f}" for r, c, sg, h, f in open_preview]
 
-        print(f"| Possible Moves      : {[(c.current_row, c.current_column) for c in children]}")
-        print(f"| Relaxed / Added     : {relaxed}")
-        print(f"| Open List (f-sorted): {open_preview}")
-        print(f"| Frontier Size       : {len(open_preview)}")
+        print(f"| {'Possible Moves':<20}: [{', '.join(possible_moves)}]")
+        print(f"| {'Relaxed / Added':<20}: [{', '.join(relaxed)}]")
+        print(f"| {'Open List (f-sorted)':<20}: [{', '.join(open_preview_labeled)}]")
+        print(f"| {'Frontier Size':<20}: {len(open_preview)}")
+        if open_preview:
+            nr, nc, ng, nh, nf = open_preview[0]
+            print(f"| {'Selected Next':<20}: ({nr}, {nc})  g={ng} h={nh} f={nf}   <- lowest f")
+        else:
+            print(f"| {'Selected Next':<20}: None (frontier empty)")
         print("+------------------------------------------------------------------+")
 
     # Reconstruct the path from goal back to start

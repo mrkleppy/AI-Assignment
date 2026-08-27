@@ -332,6 +332,12 @@ class BFS:
 
         # No path found
         print("\nNo path found from start to goal.")
+
+        # Time and Space Efficiency
+        print(f"\n--- Efficiency Metrics ---")
+        print(f"Time Efficiency (Nodes Expanded): {step}")
+        print(f"Space Efficiency (Max Frontier Size): {max_frontier_size}")
+
         return None
 
 # Bidrectional Breadth-First Search

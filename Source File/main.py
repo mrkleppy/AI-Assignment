@@ -325,7 +325,7 @@ class BFS:
             for child in all_moves:
                 if child not in visited:
                     visited.add(child)
-                    parent_map[child] = current
+                    parent_map[child] = current                        # type: ignore
                     queue.append((child, level + 1))
                     added.append((child.current_row, child.current_column))
             print(f"Added to Frontier    : {added}")
@@ -502,7 +502,7 @@ class BidirectionalBFS:
                 if child_state not in visited_from_start:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from start
                     visited_from_start.add(child_state)
-                    parent_from_initial[child_state] = current_state_from_initial
+                    parent_from_initial[child_state] = current_state_from_initial                      # type: ignore
                     queue_from_initial.append(child_state)
     
                     # Store the added child position for printing
@@ -561,7 +561,7 @@ class BidirectionalBFS:
                 if child_state not in visited_from_goal:
                     # Add the child to the visited set, parent dictionary, and queue for BFS from goal
                     visited_from_goal.add(child_state)
-                    parent_from_goal[child_state] = current_state_from_goal
+                    parent_from_goal[child_state] = current_state_from_goal                  # type: ignore
                     queue_from_goal.append(child_state)
     
                     added_to_frontier.append(child_position)

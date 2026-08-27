@@ -20,4 +20,5 @@ for row in maze_map:
             colored_row.append(str(cell))
     print(" ".join(colored_row))
 
-path = AStar(maze, 0, 0).a_star()
+path = AStar(maze, 0, 0)
+path.a_star()

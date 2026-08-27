@@ -1,12 +1,11 @@
-import tracemalloc
-from collections import deque
 import heapq
+from collections import deque
 from itertools import count
 
 GREEN = "\033[92m"
 BLUE = "\033[0;34m"
-CYAN = "\033[0;36m"
 RED = "\033[31m"
+CYAN = "\033[0;36m"
 RESET = "\033[0m"
 
 # Test datas
@@ -197,24 +196,49 @@ test_cases = [
     },
     {
         "name": "Test data 10",
-        "rows": 10,
-        "cols": 10,
-        "start": (0, 0),
-        "end": (9, 9),
+        "rows": 15,
+        "cols": 15,
+        "start": (14, 14),
+        "end": (0, 0),
         "grid": [
-            [1, 1, 0, 0, 1, 0, 1, 1, 1, 1],
-            [0, 1, 1, 1, 1, 1, 0, 1, 0, 0],
-            [1, 0, 1, 0, 0, 1, 0, 1, 1, 1],
-            [1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
-            [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
-            [1, 0, 1, 1, 1, 1, 1, 0, 1, 1],
-            [1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
-            [0, 1, 0, 1, 1, 1, 0, 0, 1, 1],
-            [1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
-            [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 0, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0],
+            [1, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0],
+            [1, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1],
+            [1, 0, 1, 1, 1, 1, 0, 1, 1, 0, 0, 1, 1, 0, 1],
+            [1, 1, 0, 1, 0, 1, 1, 0, 1, 1, 1, 1, 0, 1, 1],
+            [0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 0, 0],
+            [0, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 1, 1, 1, 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 1],
+            [1, 0, 0, 1, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1],
+            [1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1],
+            [1, 0, 1, 0, 0, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0],
+            [1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1],
         ],
-        "note": "Top Left Start, Bottom Right End, control test data, intended to be impossible to solve"
+        "note": "Bottom Right Start, Top Left End, imperfect maze with multiple possible paths"
     },
+    {
+        "name": "Test data 11",
+    "rows": 10,
+    "cols": 10,
+    "start": (0, 0),
+    "end": (9, 9),
+    "grid": [
+        [1, 1, 0, 0, 1, 0, 1, 1, 1, 1],
+        [0, 1, 1, 1, 1, 1, 0, 1, 0, 0],
+        [1, 0, 1, 0, 0, 1, 0, 1, 1, 1],
+        [1, 1, 1, 1, 1, 1, 0, 1, 0, 1],
+        [1, 0, 0, 1, 0, 0, 0, 1, 0, 1],
+        [1, 0, 1, 1, 1, 1, 1, 0, 1, 1],
+        [1, 1, 0, 0, 0, 0, 1, 1, 0, 0],
+        [0, 1, 0, 1, 1, 1, 0, 0, 1, 1],
+        [1, 1, 0, 1, 0, 1, 1, 1, 0, 1],
+        [1, 0, 1, 1, 1, 1, 0, 1, 1, 1],
+    ],
+    "note": "Control test data, intentionally impossible to solve"
+    }
 ]
 
 # Defining maze rules
@@ -281,6 +305,7 @@ class BFS:
         visited = {start}
         parent_map = {start: None}          # for path reconstruction
         step = 0
+        max_frontier_size = 0
 
         while queue:
             current, level = queue.popleft()
@@ -310,6 +335,10 @@ class BFS:
             print(f"Current Frontier    : {frontier_coords}")
             print(f"Frontier Size : {len(frontier_coords)}")
 
+            # Track maximum frontier size
+            if len(queue) > max_frontier_size:
+                max_frontier_size = len(queue)
+
             # ---- Check goal ----
             if current == goal:
                 # Reconstruct the path
@@ -322,8 +351,13 @@ class BFS:
 
                 # Print path in GREEN
                 path_str = " -> ".join([f"({r},{c})" for r, c in path])
-                print(f"\nPath found! Length: {len(path)}")
+                print(f"\nPath found! Length: {len(path) - 1}")
                 print(f"Path: {GREEN}{path_str}{RESET}")
+
+                # Time and Space Efficiency
+                print(f"\n--- Efficiency Metrics ---")
+                print(f"Time Efficiency (Nodes Expanded): {step}")
+                print(f"Space Efficiency (Max Frontier Size): {max_frontier_size}")
 
                 return path
 
@@ -343,12 +377,12 @@ class DepthFirstSearch():
 
         frontier = [start] # DFS stack
         visited = {start} # stores non duplicate values. here, stores visited and rejecting duplicates
+        current = start
 
         while frontier: # proceed if stack has nodes
             self.numOfIteration += 1
 
             current = frontier.pop(0) # get first element
-
 
             if current.is_goal(maze):
                 self.completed = True
@@ -364,6 +398,8 @@ class DepthFirstSearch():
                     if len(frontier) > self.maxFrontier: self.maxFrontier = len(frontier)
 
             trace = self.trace(start, maze, current, frontier, visited, children, self.completed)
+
+        return current
         
     def trace(self, start, maze, current, frontier, visited, children, completed):
         print(f"============= Step {self.numOfIteration} =============")
@@ -376,7 +412,12 @@ class DepthFirstSearch():
         print(", ".join(f"({node.current_row}, {node.current_column})" for node in visited), end="")
         print("\n")
 
-    def construct_path(self, current):
+    def construct_path(self, current, completed):
+        
+        if (completed == False):
+            print("No solution has found")
+            return []
+        
         path = [current]
         self.parent = current.parent
 
@@ -390,8 +431,8 @@ class DepthFirstSearch():
         print("========================== Result ==========================")
         print("Completeness                            : ", end = "")
         if self.completed: print("Completed")
-        else: print("Not Complete (No solution has found)")
-        print("Cost (Length of Path)                   :", len(path)) 
+        else: print("Incomplete (No solution has found)")
+        print("Cost (Length of Path)                   :", len(path) - 1) 
         print("Time Efficiency (Nodes Expanded)        :", self.numOfIteration)
         print("Space Efficiency (Max Nodes in Frontier):", self.maxFrontier)
 
@@ -596,13 +637,13 @@ class BidirectionalBFS:
         
         # 
         if self.completed and path is not None:
-            print("Completeness                             : Completed")
+            print(f"Completeness                             : {GREEN}Completed{RESET}")
             print("Meeting Point                            :", self.final_meeting_state)
-            print("Cost (Length of Path)                    :", len(path))
             print("Bidirectional Breadth-First Search Path  :", path)
+            print("Cost (Length of Path)                    :", len(path) - 1)
             
         else:
-            print("Completeness                             : Not Complete (No solution has found)")
+            print(f"Completeness                             : {RED}Not Complete (No solution has found){RESET}")
             print("Meeting Point                            : None")  
               
         print("Time Efficiency (Nodes Expanded)         :", self.number_of_expanded_nodes)
@@ -628,7 +669,7 @@ class BidirectionalBFS:
 
         return path_from_start + path_from_goal  # Constructs the path from start to goal through the meeting point
 
-# A* Search
+# A*
 class AStar:
     # Initialise for the A* search
     def __init__(self, maze, start_row, start_column):
@@ -739,7 +780,7 @@ class AStar:
         path.reverse()  # reverse so the path goes from start to goal
 
         path_str = " -> ".join(f"({r},{c})" for r, c in path)
-        print(f"\nPath found! Length: {len(path)}")
+        print(f"\nPath found! Length: {len(path) - 1}")
         print(f"Path: {GREEN}{path_str}{RESET}")
         return path
 
@@ -755,9 +796,10 @@ class AStar:
             print(f"{RED}Not Complete (No solution has found){RESET}")
 
         if path is not None:
-            print("Cost (Length of Path)                   :", len(path))
+            print("Cost (Length of Path)                   :", len(path) - 1)
         print("Time Efficiency (Nodes Expanded)        :", self.step)
         print("Space Efficiency (Max Nodes in Frontier):", self.max_frontier)
+
 
 # SAHC
 class SAHC:
@@ -769,6 +811,7 @@ class SAHC:
         self.visited = set()
         self.level = 0
         self.heuristic = self.calculate_heuristic(self.current_state, self.maze)
+        self.maxMoveCount = 0
 
     # SAHC serach Algorithm
     def SAHC(self):
@@ -778,22 +821,24 @@ class SAHC:
 
         # Print out the process of each level
         while self.heuristic > 0:
-            print("\n---------")
-            print(f"LEVEL {self.level}")
-            print("---------")
+            print("\n+-----------------------------------------------------------")
+            print(f"|LEVEL {self.level}")
+            print("+-----------------------------------------------------------")
             print( # current position
-                f"CURRENT NODE: {self.current_state.current_row}, "
-                f"{self.current_state.current_column}, {self.heuristic}"
+                f"| CURRENT NODE: ({self.current_state.current_row}, "
+                f"{self.current_state.current_column}) f(h) = {self.heuristic}"
             )
 
             # Add the current state to visited to prevent going back
             self.visited.add(self.current_state)
             # Find all possible moves of current state
             possible_moves = self.get_possible_move(self.current_state, self.maze)
+            self.maxMoveCount = self.compareMoveCount(len(possible_moves))
 
             # If no possible moves is found then end
             if not possible_moves:
-                print("No possible moves from current state")
+                print("| No possible moves from current state")
+                print("+-----------------------------------------------------------")
                 break
             
             # Find all the next state of all the possible moves
@@ -805,10 +850,19 @@ class SAHC:
 
             # rearrange the next state list with the heuristic value in ascending order
             next_states.sort(key=lambda x: x[1])
-            print("OPEN LIST:", [ # print out the oen list
-                (state.current_row, state.current_column, heuristic)
-                for state, heuristic in next_states
-            ])
+            print("| OPEN LIST: [", end="")
+            for state, heuristic in next_states: # print out the oen list
+                if ((state, heuristic) == next_states[0]):
+                    print(
+                        f"({self.current_state.current_row}, {self.current_state.current_column})"
+                        f" f(h) = {self.heuristic}", end=""
+                    )
+                else:
+                    print(
+                        f", ({self.current_state.current_row}, {self.current_state.current_column})"
+                        f" f(h) = {self.heuristic}", end=""
+                    )
+            print("]")
 
             # The best next state will be the next state with lowest heuristic value
             # After sorting the next state with lowest heuristic value will be at the front of the list
@@ -823,23 +877,54 @@ class SAHC:
                 self.path.append(self.current_state) # store as the path chosen
                 self.level += 1 # Proceed to next level
                 # print the choice
-                print("selected:", self.current_state.current_row, self.current_state.current_column, self.heuristic)
+                print(
+                    f"| SELECTED: ({self.current_state.current_row}, "
+                    f"{self.current_state.current_column}) f(h) = {self.heuristic}"
+                )
+                print("+-----------------------------------------------------------")
             else:
                 # No better path to proceed, show the details
-                print("there is no better move or already visited")
-                print("\n ------------------------------------------------------------")
-                print("Initial State:", self.path[0].current_row, self.path[0].current_column)
-                print("Goal State:", self.maze.end_row, self.maze.end_column)
-                print("Path:", [(state.current_row, state.current_column) for state in self.path])
-                print("LOCAL MAXIMUM: There is no solution")
+                print("| There is no better move or already visited")
+                print("+-----------------------------------------------------------")
+                print("\n+-----------------------------------------------------------")
+                print("| RESULT")
+                print("+-----------------------------------------------------------")
+                print(f"| Initial State: ({self.path[0].current_row}, {self.path[0].current_column})")
+                print(f"| Goal State: ({self.maze.end_row}, {self.maze.end_column})")
+                print("| Path: [", end="")
+                for state in self.path:
+                    if (state == self.path[0]):
+                        print(f"({state.current_row}, {state.current_column})", end="")
+                    else:
+                        print(f", ({state.current_row}, {state.current_column})", end="")
+                print("]")
+                print("|")
+                print("| Completeness: Not complete, local maxima hit!")
+                print(f"| Cost: {len(self.path) - 1} length of path")
+                print(f"| Time efficiency: {len(self.path) } node(s) expanded")
+                print(f"| Space efficiency: {self.maxMoveCount} byte(s)")
+                print("+-----------------------------------------------------------")
                 return None
 
         # print out all the data
-        print("\n ------------------------------------------------------------")
-        print("Initial State:", self.path[0].current_row, self.path[0].current_column)
-        print("Goal State:", self.maze.end_row, self.maze.end_column)
-        print("Path:", [(state.current_row, state.current_column) for state in self.path])
-        print("Solution Found!")
+        print("\n+-----------------------------------------------------------")
+        print("| RESULT")
+        print("+-----------------------------------------------------------")
+        print(f"| Initial State: ({self.path[0].current_row}, {self.path[0].current_column})")
+        print(f"| Goal State: ({self.maze.end_row}, {self.maze.end_column})")
+        print("| Path: [", end="")
+        for state in self.path:
+            if (state == self.path[0]):
+                print(f"({state.current_row}, {state.current_column})", end="")
+            else:
+                print(f", ({state.current_row}, {state.current_column})", end="")
+        print("]")
+        print("|")
+        print("| Completeness: Completed, solution found!")
+        print(f"| Cost: {len(self.path) - 1} length of path")
+        print(f"| Time efficiency: {len(self.path)} node(s) expanded")
+        print(f"| Space efficiency: {self.maxMoveCount} byte(s)")
+        print("+-----------------------------------------------------------")
         return self.path
 
     def get_possible_move(self, current_state, maze):
@@ -879,6 +964,12 @@ class SAHC:
     def calculate_heuristic(self, current_state, maze):
         # calculate the heuristic value by performing mamanhattan algorithm distance
         return abs(current_state.current_row - maze.end_row) + abs(current_state.current_column - maze.end_column)
+    
+    def compareMoveCount(self, totalMove):
+        if (totalMove > self.maxMoveCount):
+            return totalMove
+        else:
+            return self.maxMoveCount
 
 # UI for running everything
 def print_maze(maze_map):
@@ -913,7 +1004,7 @@ def print_maze_with_path(maze_map, path):
         
 def main():
     while True:
-        print("Enter 0 to exit or choose a test case number (1-10):")
+        print("Enter 0 to exit or choose a test case number (1-11):")
         
         try:
             caseNo = int(input("Enter test case number: "))
@@ -925,7 +1016,7 @@ def main():
             print("Exiting program.\n")
             break
             
-        if caseNo < 1 or caseNo > 10:
+        if caseNo < 1 or caseNo > 11:
             print("Invalid test case number.\n")
             continue
             
@@ -972,12 +1063,12 @@ def main():
                 dfs_solver = DepthFirstSearch()
                 path = dfs_solver.dfs(maze, start_row, start_column)
                 
-                if path is not None:
-                    dfs_solver.result(dfs_solver.construct_path(path))
+                if dfs_solver.completed and path is not None:
+                    dfs_solver.result(dfs_solver.construct_path(path, completed=dfs_solver.completed))
                     print("\nPath: ", end="")
-                    print(", ".join(f"({node.current_row}, {node.current_column})" for node in dfs_solver.construct_path(path)), end="")
+                    print(", ".join(f"({s.current_row},{s.current_column})" for s in dfs_solver.construct_path(path, completed=dfs_solver.completed)))
                     print("")
-                    print_maze_with_path(maze_map, [(s.current_row, s.current_column) for s in dfs_solver.construct_path(path)])
+                    print_maze_with_path(maze_map, [(s.current_row, s.current_column) for s in dfs_solver.construct_path(path, completed=dfs_solver.completed)])
                 else:
                     print("\nDepth-First Search Path: No solution")
                     
@@ -995,13 +1086,14 @@ def main():
                 input("\nPress Enter to return to the main menu...")
 
             elif algorithmChoice == 4:
-                a_star_solver = AStar(maze, start_row, start_column)
-                path = a_star_solver.a_star()
-
+                A_Star_solver = AStar(maze, start_row, start_column)
+                path = A_Star_solver.a_star()
+                
                 if path is not None:
                     print_maze_with_path(maze_map, path)
+                    print("\nA* Path:", path)
                 else:
-                    print("\nA* Search Path: No solution")
+                    print("\nA* Path: No solution")
 
                 input("\nPress Enter to return to the main menu...")
 

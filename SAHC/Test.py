@@ -1,7 +1,7 @@
 from Maze_generator import generate_maze
 from HillClimbing import SAHC, Maze, State
 
-rows, columns = 10, 10
+rows, columns = 15, 15
 
 maze_map = generate_maze(rows, columns)
 maze = Maze(maze_map, 0, 0)

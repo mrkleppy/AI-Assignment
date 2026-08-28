@@ -411,10 +411,18 @@ class SAHC:
 
             # rearrange the next state list with the heuristic value in ascending order
             next_states.sort(key=lambda x: x[1])
+<<<<<<< Updated upstream
             print("OPEN LIST:", [ # print out the oen list
                 (state.current_row, state.current_column, heuristic)
                 for state, heuristic in next_states
             ])
+=======
+            formatted_states = [
+                f"({state.current_row}, {state.current_column}) f(h) = {heuristic}"
+                for state, heuristic in next_states
+            ]
+            print(f"| OPEN LIST: [{', '.join(formatted_states)}]")
+>>>>>>> Stashed changes
 
             # The best next state will be the next state with lowest heuristic value
             # After sorting the next state with lowest heuristic value will be at the front of the list

@@ -2,5 +2,4 @@
 Repo for DCS2S1 AMCS2104 group assignment
 DONT EDIT main.py
 
-27th July
-Added main file (for submission purpose and can run in programiz)
+only run main.py located in Source File, can be used in online-python

@@ -1,6 +1,7 @@
 import random
 
-def generate_maze(rows, columns, extra_openings=0.25):
+
+def generate_maze(rows, columns):
     maze = [[0 for _ in range(columns)] for _ in range(rows)]
 
     start_row, start_column = 0, 0
@@ -9,7 +10,6 @@ def generate_maze(rows, columns, extra_openings=0.25):
     stack = [(start_row, start_column)]
     directions = [(-1, 0), (1, 0), (0, -1), (0, 1)]
 
-    # First phase: generate a connected maze structure
     while stack:
         r, c = stack[-1]
         neighbours = []
@@ -37,24 +37,7 @@ def generate_maze(rows, columns, extra_openings=0.25):
         else:
             stack.pop()
 
-    # Ensure start and goal are open
     maze[0][0] = 1
     maze[rows - 1][columns - 1] = 1
-
-    # Second phase: make maze imperfect by opening more blocked cells
-    blocked_cells = [
-        (r, c)
-        for r in range(1, rows - 1)
-        for c in range(1, columns - 1)
-        if maze[r][c] == 0
-    ]
-
-    random.shuffle(blocked_cells)
-
-    openings_to_add = int(len(blocked_cells) * extra_openings)
-
-    for i in range(openings_to_add):
-        r, c = blocked_cells[i]
-        maze[r][c] = 1
 
     return maze
